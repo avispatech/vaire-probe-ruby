@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+load './environment.rb'
+
+require 'socket'
+
+VAIRE_ENDPOINT = "#{ENV.fetch('VAIRE_URL')}/messages"
+SERVICE_NAME = "#{ENV.fetch('VAIRE_SERVICE') { 'VAIRE-PROBE' }}"
+
+BASE_PAYLOAD = {
+  data: {
+    type: :states,
+    attributes: {}
+  }
+}.freeze
+
+def cpu_from_snapshot(snap)
+  snap.cpus.collect do |cpu|
+    {
+      idle: cpu.idle,
+      system: cpu.system,
+      user: cpu.user,
+      nice: cpu.nice
+    }
+  end
+end
+
+def data_from_snapshot(snap)
+  {
+    load: [
+      snap.load_average.one_minute,
+      snap.load_average.five_minutes,
+      snap.load_average.fifteen_minutes
+    ],
+    memory: {
+      free: snap.memory.free,
+      wired: snap.memory.wired,
+      active: snap.memory.active
+    },
+    cpu: cpu_from_snapshot(snap),
+    boot: snap.boot_time.utc
+  }
+end
+
+def send_telemetry(attr)
+  payload = BASE_PAYLOAD.dup
+  payload[:data][:attributes] = attr
+  Typhoeus.post(VAIRE_ENDPOINT,
+                body: payload,
+                headers: { 'X-VAIRE-TOKEN' => 'ainunindale' })
+end
+
+def perform
+  snap = Vmstat.snapshot
+  attrs = {
+    service: SERVICE_NAME,
+    machine: Socket.gethostname,
+    summary: :ok,
+    stats: data_from_snapshot(snap),
+    ocurred_at: snap.at.utc
+  }
+  puts attrs
+  send_telemetry(attrs)
+end
+
+perform
