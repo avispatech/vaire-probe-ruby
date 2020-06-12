@@ -8,7 +8,7 @@ Ruby probe for sending machine state to Väire
     - VAIRE_SERVICE_NAME: The name of the service that is reporting
   - run ./probe
   
-# Recommendation
+## Recommendation
   - Run this script in a crontab
   
 
