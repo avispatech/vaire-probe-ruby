@@ -4,7 +4,7 @@ load './environment.rb'
 require 'socket'
 
 VAIRE_ENDPOINT = "#{ENV.fetch('VAIRE_URL')}/messages"
-SERVICE_NAME = "#{ENV.fetch('VAIRE_SERVICE') { 'VAIRE-PROBE' }}"
+SERVICE_NAME = "#{ENV.fetch('VAIRE_SERVICE_NAME') { 'VAIRE-PROBE' }}"
 
 BASE_PAYLOAD = {
   data: {
@@ -58,7 +58,6 @@ def perform
     stats: data_from_snapshot(snap),
     ocurred_at: snap.at.utc
   }
-  puts attrs
   send_telemetry(attrs)
 end
 
